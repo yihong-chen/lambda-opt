@@ -1,5 +1,5 @@
 # lambda-opt
-This repo provides our implementation for λOpt. λOpt is a fine-grained adaptive regularizer for recommender models. The key idea is to specify an individual regularization strength for each user and item. Check our paper for details about λOpt if you are interested!
+This repo provides our implementation for λOpt. λOpt is a fine-grained adaptive regularizer for recommender models. The key idea is to specify an individual regularization strength for each user and item. Check [our paper](https://arxiv.org/abs/1905.11596) for details about λOpt if you are interested!
 
 > Yihong Chen, Bei Chen, Xiangnan He, Chen Gao, Yong Li, Jian-Guang Lou and Yue Wang(2019). λOpt: Learn to Regularize Recommender Models in Finer Levels. In KDD'19, Anchorage, Alaska, USA, August 4-8, 2019.
 
