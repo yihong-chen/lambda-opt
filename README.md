@@ -49,24 +49,29 @@ python train_ml1m_alter.py
 # Citation
 If you this repo, please kindly cite our paper.
 ```
-@inproceedings{lambdaopt19,
-  author = {Yihong Chen and
-         Bei Chen and
-         Xiangnan He and
-         Chen Gao and
-         Yong Li and
-         Jian-Guang Lou and 
-         Yue Wang},
-  title = {λOpt: Learn to Regularize Recommender Models in Finer Levels},
-  booktitle = {{KDD}},
-  year  = {2019}
-}
+@inproceedings{Chen:2019:9LR:3292500.3330880,
+ author = {Chen, Yihong and Chen, Bei and He, Xiangnan and Gao, Chen and Li, Yong and Lou, Jian-Guang and Wang, Yue},
+ title = {{\$\lambda\$}Opt: Learn to Regularize Recommender Models in Finer Levels},
+ booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \&\#38; Data Mining},
+ series = {KDD '19},
+ year = {2019},
+ isbn = {978-1-4503-6201-6},
+ location = {Anchorage, AK, USA},
+ pages = {978--986},
+ numpages = {9},
+ url = {http://doi.acm.org/10.1145/3292500.3330880},
+ doi = {10.1145/3292500.3330880},
+ acmid = {3330880},
+ publisher = {ACM},
+ address = {New York, NY, USA},
+ keywords = {matrix factorization, regularization hyperparameter, top-k recommendation},
+} 
 ```
 # Contact
 Any feedback is much appreciated! Drop us a line at laceychen@outlook.com or simply open a new issue.
 
 # TODO
-- [ ] Upgrade to pytorch 1.0
+- [ ] Upgrade to pytorch 1.0. Refer to [issue 1](https://github.com/LaceyChen17/lambda-opt/issues/1) for progress.
 
 
 
