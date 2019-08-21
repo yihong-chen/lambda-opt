@@ -49,9 +49,9 @@ python train_ml1m_alter.py
 # Citation
 If you this repo, please kindly cite our paper.
 ```
-@inproceedings{Chen:2019:9LR:3292500.3330880,
+@inproceedings{lambdaopt,
  author = {Chen, Yihong and Chen, Bei and He, Xiangnan and Gao, Chen and Li, Yong and Lou, Jian-Guang and Wang, Yue},
- title = {{\$\lambda\$}Opt: Learn to Regularize Recommender Models in Finer Levels},
+ title = {lambdaOpt: Learn to Regularize Recommender Models in Finer Levels},
  booktitle = {Proceedings of the 25th ACM SIGKDD International Conference on Knowledge Discovery \&\#38; Data Mining},
  series = {KDD '19},
  year = {2019},
