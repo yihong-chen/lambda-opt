@@ -62,9 +62,11 @@ class BPR_Factorizer(object):
         self.train_step_idx = new_factorizer.train_step_idx
         self.param = new_factorizer.param
         self.model.load_state_dict(new_factorizer.model.state_dict())
+        self.optimizer = use_optimizer(self.model, self.opt)
         self.optimizer.load_state_dict(new_factorizer.optimizer.state_dict())
+
         self.scheduler = ExponentialLR(self.optimizer,
-                                       gamma=self.opt['lr_exp_decay'],
+                                      gamma=self.opt['lr_exp_decay'],
                                        last_epoch=self.scheduler.last_epoch)
 
     @property
@@ -118,7 +120,7 @@ class MFBPRFactorizer(BPR_Factorizer):
     def __init__(self, opt):
         super(MFBPRFactorizer, self).__init__(opt)
         self.model = MF(opt)
-
+        self.opt = opt
         if self.use_cuda:
             use_cuda(True, opt['device_id'])
             self.model.cuda()
@@ -180,6 +182,7 @@ class MFBPRFactorizer(BPR_Factorizer):
                                                 for _, v in self.optimizer.state.items() if len(v) > 0]}
 
         self.optimizer.step()
+
         # print('\tcurrent learing rate of MF optimizer ...')
         # for param_grp in self.optimizer.param_groups:
         #     print('\t{}'.format(param_grp['lr']))
