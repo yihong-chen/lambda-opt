@@ -52,7 +52,6 @@ class BPR_Factorizer(object):
         self._train_step_idx = None
         self._train_episode_idx = None
 
-        self.copy_count = 0
     # @profile
     def copy(self, new_factorizer):
         """Return a new copy of factorizer
@@ -60,13 +59,11 @@ class BPR_Factorizer(object):
         # Note: directly using deepcopy wont copy factorizer.scheduler correctly
                 the gradient of self.model is not copied!
         """
-        self.copy_count = self.copy_count + 1
-        #print(self.copy_count)
-        self.train_step_idx = deepcopy(new_factorizer.train_step_idx)
-        self.param = deepcopy(new_factorizer.param)
-        self.model.load_state_dict(deepcopy(new_factorizer.model.state_dict()))
+        self.train_step_idx = new_factorizer.train_step_idx
+        self.param = new_factorizer.param
+        self.model.load_state_dict(new_factorizer.model.state_dict())
         self.optimizer = use_optimizer(self.model, self.opt)
-        self.optimizer.load_state_dict(deepcopy(new_factorizer.optimizer.state_dict()))
+        self.optimizer.load_state_dict(new_factorizer.optimizer.state_dict())
 
         self.scheduler = ExponentialLR(self.optimizer,
                                       gamma=self.opt['lr_exp_decay'],
