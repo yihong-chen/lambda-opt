@@ -44,7 +44,7 @@ python train_ml1m_alter.py
 - `src/train_[dataset]_[regularization method].py`: entry point
 
 # Requirement
-- pytorch=0.4.0
+- pytorch=1.2.0
 
 # Citation
 If you this repo, please kindly cite our paper.
