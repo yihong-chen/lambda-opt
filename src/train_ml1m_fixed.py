@@ -37,7 +37,7 @@ if __name__ == '__main__':
         multi_cpu_valid=False,
         num_workers_valid=1,
         multi_cpu_test=True,
-        num_workers_test=8,
+        num_workers_test=1,
         device_ids_test=[0],
         device_id=0,
         batch_size_train=1024,
