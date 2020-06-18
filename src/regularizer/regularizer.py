@@ -6,6 +6,8 @@ from torch.nn import BCELoss, MSELoss, BCEWithLogitsLoss
 from torch.optim import Adam
 from torch.optim.lr_scheduler import ExponentialLR
 import numpy as np
+import higher
+
 from copy import deepcopy
 
 
@@ -22,6 +24,8 @@ def setup_regularizer(opt):
         regularizer = FixedRegularizer(opt)
     if reg_name == 'alter_mf':
         regularizer = MFAlterRegularizer(opt)
+    if reg_name == 'alter_mf_higher':
+        regularizer = MFARHigher(opt)
     return regularizer
 
 
@@ -71,9 +75,6 @@ class Regularizer(object):
     def init_episode(self):
         """Initialization for a new episode"""
         self._train_step_idx = 0
-
-    def observe(self, status):
-        pass
 
     def get_lambda(self, status):
         """Generate lambda given the state"""
@@ -226,27 +227,9 @@ class MFAlterRegularizer(AlterRegularizer):
         loss.backward()
         torch.nn.utils.clip_grad_norm_(self.lambda_network.parameters(), self.clip)
         self.optimizer.step()
-
         self.valid_mf_loss = loss.item()
-        
-        if self._opt['lambda_network_type'] in ['dimension-wise', 'global']:
-            self.lambda_network.ori_lambda.data.clamp_(0)
-            # return self.lambda_network.lambda.data.cpu()
-            return self.lambda_network.ori_lambda.data.clone()
-        elif self._opt['lambda_network_type'] in [ 'double-dimension-wise',
-                                                   'user-wise',
-                                                   'item-wise',
-                                                   'user+item',
-                                                   'dimension+user',
-                                                   'dimension+item',
-                                                   'dimension+user+item']:
-            self.lambda_network.user_lambda.data.clamp_(0)  # Non-negative guarantee
-            self.lambda_network.item_lambda.data.clamp_(0)  # Non-negative guarantee
-            # return [self.lambda_network.user_lambda.data.cpu(),
-            #         self.lambda_network.item_lambda.data.cpu()]
-            return [self.lambda_network.user_lambda.data.clone(),
-                    self.lambda_network.item_lambda.data.clone()]
-    
+        return self.lambda_network.parse_lmbda(is_detach=True)
+
     def get_lambda(self, status):
         """Generate lambda given the state
 
@@ -261,7 +244,6 @@ class MFAlterRegularizer(AlterRegularizer):
         """
         sampler = status['sampler']
         factorizer = status['factorizer']
-        factorizer.set_assumed_flag(True)  # flag to distinguish iteslf as assumed update
         self.update_mf_lr(lr=factorizer.scheduler.get_lr()[0])  # reset mf_lr for lambda network
         curr_embs = factorizer.param
 
@@ -291,3 +273,60 @@ class MFAlterRegularizer(AlterRegularizer):
                                   curr_mf_optim_status,
                                   sampler)  # get next lambda via update lambda network
         return next_lambda
+
+
+class MFARHigher(AlterRegularizer):
+    def __init__(self, opt):
+        super(MFARHigher, self).__init__(opt)
+        self.lambda_network = setup_lambda_network_mf(self.lambda_network_opt)
+        self.init_lambda_network()
+
+    def init_episode(self):
+        super(MFARHigher, self).init_episode()
+        self.lambda_network = setup_lambda_network_mf(self.lambda_network_opt)
+        self.init_lambda_network()
+
+    def init_lambda(self):
+        return self.lambda_network.init_lambda()
+
+    def update(self, m, m_optim, sampler_train, sampler_valid):
+        ...
+
+    def get_lambda(self, status):
+        sampler = status['sampler']
+        factorizer = status['factorizer']
+        m = factorizer.model
+        m_optimizer = factorizer.optimizer
+        self.update_mf_lr(lr=factorizer.scheduler.get_lr()[0])
+        self.train_step_idx += 1
+
+        with higher.innerloop_ctx(m, m_optimizer) as (fmodel, diffopt):
+            # look-ahead, this is very similar to factorizer update except that lambda is included in the computational graph
+            u, i, j = sampler.get_sample('train')
+            preference = torch.ones(u.size())[0]
+            if self.use_cuda:
+                u, i, j = u.cuda(), i.cuda(), j.cuda()
+                preference = preference.cuda()
+            prob_preference = fmodel.forward_triple(u, i, j)
+            l_fit = self.criterion(prob_preference, preference) / (u.size()[0])
+            lmbda = self.lambda_network.parse_lmbda(is_detach=False)
+            l_reg = fmodel.l2_penalty(lmbda, u, i, j) / (u.size()[0])
+            l = l_fit + l_reg
+            diffopt.step(l)
+
+            # compute the validation loss
+            valid_u, valid_i, valid_j = sampler.get_sample('valid')
+            valid_preference = torch.ones(valid_u.size()[0])
+            if self.use_cuda:
+                valid_preference = valid_preference.cuda()
+                valid_u, valid_i, valid_j = valid_u.cuda(), valid_i.cuda(), valid_j.cuda()
+
+            self.lambda_network.train()
+            self.optimizer.zero_grad()
+            valid_prob_preference = fmodel.forward_triple(valid_u, valid_i, valid_j) / valid_u.size()[0]
+            l_val = self.criterion(valid_prob_preference, valid_preference)
+            l_val.backward()
+            torch.nn.utils.clip_grad_norm_(self.lambda_network.parameters(), self.clip)
+            self.optimizer.step()
+            self.valid_mf_loss = l_val.item()
+            return self.lambda_network.parse_lmbda(is_detach=True)

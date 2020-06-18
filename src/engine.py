@@ -149,10 +149,11 @@ class Engine(object):
             # Prepare status for current step
             status['done'] = False
             status['sampler'] = self._sampler
-            self._factorizer_assumed.copy(self._factorizer)
+            self._factorizer_assumed.copy(self._factorizer) # TODO move this to regularizer???
             status['factorizer'] = self._factorizer_assumed  # for assumed copy
+            # status['assumed_factorizer']
+            # status['factorizer']
 
-            self._regularizer.observe(status)
             # Regularizer generate lambda for current mf update step
             # print('Regularizer generate lambda ...')
             if (step_idx % lambda_update_interval == 0) and (step_idx > 0):

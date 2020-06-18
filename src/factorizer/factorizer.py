@@ -101,10 +101,6 @@ class BPR_Factorizer(object):
         assert hasattr(self, 'model')
         return get_grad_norm(self.model)
 
-    def set_assumed_flag(self, is_assumed):
-        self.is_assumed = is_assumed
-
-    # @profile
     def update(self, sampler, l2_lambda):
         if (self.train_step_idx > 0) and (
                 self.train_step_idx % sampler.num_batches_train == 0):  # sampler.get_num_batch_per_epoch('train')

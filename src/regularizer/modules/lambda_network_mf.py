@@ -79,6 +79,40 @@ class LambdaNetwork(nn.Module):
                       u, i, j):
         pass
 
+    def parse_lmbda(self, is_detach=True):
+        if is_detach:
+            if self._opt['type'] in ['dimension-wise', 'global']:
+                self.ori_lambda.data.clamp_(0)
+                # return self.ori_lambda.data.clone() # clone or detach?
+                return self.ori_lambda.data.detach()
+            elif self._opt['type'] in [ 'double-dimension-wise',
+                                    'user-wise',
+                                    'item-wise',
+                                    'user+item',
+                                    'dimension+user',
+                                    'dimension+item',
+                                    'dimension+user+item']:
+                self.user_lambda.data.clamp_(0)  # Non-negative guarantee
+                self.item_lambda.data.clamp_(0)  # Non-negative guarantee
+                # return [self.user_lambda.data.clone(), self.item_lambda.data.clone()]
+                return [self.user_lambda.data.detach(), self.item_lambda.data.detach()]
+        else:
+            if self._opt['type'] in ['dimension-wise', 'global']:
+                self.ori_lambda.data.clamp_(0)
+                # return self.ori_lambda.data.clone() # clone or detach?
+                return self.ori_lambda
+            elif self._opt['type'] in [ 'double-dimension-wise',
+                                    'user-wise',
+                                    'item-wise',
+                                    'user+item',
+                                    'dimension+user',
+                                    'dimension+item',
+                                    'dimension+user+item']:
+                self.user_lambda.data.clamp_(0)  # Non-negative guarantee, don't record this into the computational graph
+                self.item_lambda.data.clamp_(0)  # Non-negative guarantee
+                # return [self.user_lambda.data.clone(), self.item_lambda.data.clone()]
+                return [self.user_lambda, self.item_lambda]
+
     def get_emb(self):
         if hasattr(self, 'lambda'):
             return self.ori_lambda.data.cpu()
@@ -159,26 +193,7 @@ class LambdaNetwork(nn.Module):
         next_item_emb = Dropout(p=self.dp_prob)(next_item_emb)
         prob = self.get_preference_prob(u, i, j, next_user_emb, next_item_emb)
         return prob
-    
-    def forward_ui_lambda_multi_step(self, next_emb_no_reg, curr_emb, u, i, j):
-        """
-        
-        args:
-            next_emb_no_reg: list
-            u, i, j: validation data sample
-        """
-        num_steps = len(next_emb_no_reg)
-        next_emb_reg = [None for step in range(num_steps)]
-        next_emb_reg[0] = curr_emb
-        for i in range(num_steps - 1):
-            next_emb_reg[i+1] = self.get_next_reg_emb_packed(next_emb_no_reg[i], next_emb_reg[i])
-        
-        next_user_emb, next_item_emb = next_emb_reg[-1][0], next_emb_reg[-1][1]
-        next_user_emb = Dropout(p=self.dp_prob)(next_user_emb)
-        next_item_emb = Dropout(p=self.dp_prob)(next_item_emb)
-        prob = self.get_preference_prob(u, i, j, next_user_emb, next_item_emb)
-        return prob
-           
+
 
 class GlobalLambdaNetwork(LambdaNetwork):
     """Regularize via a global adaptive lambda"""
